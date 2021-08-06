@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mrbs
+  labels:
+    app: mrbs
+spec:
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: mrbs
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mrbs
+  labels:
+    app: mrbs
+spec:
+  selector:
+    matchLabels:
+      app: mrbs
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mrbs
+        tier: frontend
+    spec:
+      containers:
+      - image: jberanek/mrbs:1.9.3.1
+        imagePullPolicy: Always
+        name: mrbs
+        env:
+        - name: DB_HOST
+          value: mrbs-mysql
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: secret-db-auth
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-db-auth
+              key: password
+        ports:
+        - containerPort: 80
+          name: mrbs
